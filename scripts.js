@@ -10,6 +10,16 @@ let startX = 0;
 let isSwiping = false;
 let searchIndex = -1;
 
+const socket = io('http://localhost:3000');
+
+socket.on('receiveMessage', (message) => {
+    const chatMessagesDiv = document.getElementById("chatMessages");
+    const messageElement = document.createElement("div");
+    messageElement.className = "chat-message";
+    messageElement.innerText = message;
+    chatMessagesDiv.appendChild(messageElement);
+});
+
 async function loadProducts() {
     try {
         const response = await fetch('products.json');
@@ -42,7 +52,6 @@ function displayProducts(filteredProducts = products) {
                 <button class="btn" onclick="orderNow('${product.name}', '${product.images[0]}')">Заказать 🛍️</button>
             </div>
         `;
-        // Убедитесь, что клик по карточке товара не открывает модальное окно
         productDiv.querySelector('img').addEventListener('click', () => {
             openModal(products.indexOf(product));
             trackRecentlyViewed(product);
@@ -144,7 +153,7 @@ function displayCart() {
         cartItemDiv.innerHTML = `
             <img src="${item.image}" alt="${item.name}" onclick="openModalFromCart(${index})">
             <p>${item.name} - ${item.price}₽ x ${item.quantity}</p>
-            <button class="btn" onclick="removeFromCart(${index})"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#EA3323"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-160v-520h-40v-80h200v-40h240v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg></button>
+            <button class="btn" onclick="removeFromCart(${index})"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#EA3323"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-160v-520h-40v-80h200v-40h200v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg></button>
         `;
         cartItemsDiv.appendChild(cartItemDiv);
     });
@@ -159,8 +168,10 @@ function openModalFromCart(index) {
 }
 
 function orderNow(name, image) {
-    const message = `Я хочу заказать ${name} %0AИзображение: ${image}`;
-    window.open(`https://wa.me/+79964684744?text=${encodeURIComponent(message)}`, '_blank');
+    const message = `Я хочу заказать ${name}`;
+    openChat();
+    document.getElementById('chatInput').value = message;
+    sendMessage({ key: 'Enter' }); // Симулируем нажатие Enter для отправки сообщения
 }
 
 function addToCart(name, price, image, quantity = 1) {
@@ -205,7 +216,7 @@ function displayWishlist() {
         wishlistItemDiv.innerHTML = `
             <img src="${item.image}" alt="${item.name}">
             <p>${item.name} - ${item.price}₽</p>
-            <button class="btn" onclick="toggleWishlist(event, '${item.name}', ${item.price}, '${item.image}')"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#EA3323"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-160v-520h-40v-80h200v-40h240v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg></button>
+            <button class="btn" onclick="toggleWishlist(event, '${item.name}', ${item.price}, '${item.image}')"><svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#EA3323"><path d="M280-720v520-520Zm170 600H280q-33 0-56.5-23.5T200-160v-520h-40v-80h200v-40h200v40h200v80h-40v172q-17-5-39.5-8.5T680-560v-160H280v520h132q6 21 16 41.5t22 38.5Zm-90-160h40q0-63 20-103.5l20-40.5v-216h-80v360Zm160-230q17-11 38.5-22t41.5-16v-92h-80v130ZM680-80q-83 0-141.5-58.5T480-280q0-83 58.5-141.5T680-480q83 0 141.5 58.5T880-280q0 83-58.5 141.5T680-80Zm66-106 28-28-74-74v-112h-40v128l86 86Z"/></svg></button>
         `;
         wishlistItemsDiv.appendChild(wishlistItemDiv);
     });
@@ -279,7 +290,9 @@ function checkout() {
     if (cart.length > 0) {
         const cartItems = cart.map(item => `${item.name} - ${item.price}₽ x ${item.quantity} %0AИзображение: ${item.image}`).join('%0A');
         const message = `Я хочу заказать:%0A${cartItems}`;
-        window.open(`https://wa.me/+79964684744?text=${encodeURIComponent(message)}`, '_blank');
+        openChat();
+        document.getElementById('chatInput').value = message;
+        sendMessage({ key: 'Enter' }); // Симулируем нажатие Enter для отправки сообщения
     } else {
         alert('Ваша корзина пуста');
     }
@@ -488,8 +501,7 @@ function sendMessage(event) {
     if (event.key === 'Enter') {
         const message = document.getElementById('chatInput').value;
         if (message) {
-            chatMessages.push(message);
-            loadChatMessages();
+            socket.emit('sendMessage', message);
             document.getElementById('chatInput').value = '';
         }
     }
